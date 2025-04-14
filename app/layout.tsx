@@ -6,14 +6,8 @@ import Link from "next/link";
 import "./globals.css";
 import { NavigationWithActiveLink } from "@/components/navigation-with-active-link";
 import { Toaster } from "sonner";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
 import { title } from "process";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -82,29 +76,8 @@ export default function RootLayout({
         >
           <SidebarProvider>
             <div className="flex min-h-screen w-full">
-              <Sidebar>
-                <SidebarHeader>
-                  <Link href="/" className="flex items-center gap-2 p-4">
-                    <span className="text-lg font-semibold flex items-center w-full h-full">
-                      <div>
-                        <div>
-                          Bna Gestion
-                        </div>
-                        <div className="text-xs text-muted">
-                          v3.0.0
-                        </div>
-                      </div>
-                      <img src="/logo/bna-logo.png" alt="BNA Logo" className="ml-8 h-9 w-34" />
-                    </span>
-                  </Link>
-                </SidebarHeader>
-                <SidebarContent>
-                  <NavigationWithActiveLink navigation={navigation} />
-                </SidebarContent>
-              </Sidebar>
-              <main className="flex-1">
+              <main className="flex-1 p-4">
                 <nav className="flex justify-between items-center border-b border-b-foreground/10 h-16 px-4">
-                  <SidebarTrigger />
                   <div className="flex items-center gap-4">
                     <ThemeSwitcher />
                     <HeaderAuth />

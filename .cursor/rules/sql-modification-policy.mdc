@@ -1,0 +1,30 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+SQL Modification Policy
+Process for Adding Columns or Tables
+
+DO NOT apply any SQL modifications directly to the database
+DO create a separate SQL file for each modification
+Each file should contain:
+
+Clear description of the change as a comment
+Complete SQL statement for the modification
+Timestamp of when the modification was created
+
+
+
+Standard Format for SQL Files
+sqlCopier-- Description: [Brief description of the change]
+-- Created: [Date and time]
+
+-- SQL statement below
+ALTER TABLE [table_name] ADD COLUMN [column_name] [data_type] [constraints];
+Implementation Process
+
+Developer creates SQL file with proposed change
+File is reviewed and approved
+Administrator copies the SQL and runs it in Supabase SQL Editor
+Change is documented in the changelog

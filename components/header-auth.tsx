@@ -3,7 +3,6 @@ import { hasEnvVars } from "@/utils/supabase/check-env-vars";
 import Link from "next/link";
 import { Button } from "./ui/button";
 import { createClient } from "@/utils/supabase/server";
-import { NavUser } from "./nav-user";
 
 export default async function AuthButton() {
   const supabase = await createClient();
@@ -51,7 +50,6 @@ export default async function AuthButton() {
 
   return user ? (
     <div className="flex items-center gap-4 ">
-      <NavUser />
       
     </div>
   ) : (

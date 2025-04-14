@@ -1,0 +1,123 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: Guidelines for using Supabase client and server in the application
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: true
+---
+
+# Supabase Client/Server Usage Guidelines
+
+## Client vs Server Usage
+
+### Client-Side Usage
+Use the client-side Supabase instance for:
+- Interactive data fetching triggered by user actions 
+- Real-time subscriptions
+- Data operations in client components with `"use client"` directive
+
+```typescript
+import { createClient } from '@/utils/supabase/client';
+
+// In a client component
+export default function ClientComponent() {
+  const handleAction = async () => {
+    const supabase = createClient();
+    const { data, error } = await supabase.from('table').select('*');
+    // Handle result...
+  };
+}
+```
+
+### Server-Side Usage
+Use the server-side Supabase instance for:
+- Initial data loading in server components
+- Authenticated API routes
+- Operations requiring server-side environment variables
+- Sensitive operations that should bypass client-side code
+
+```typescript
+import { createClient } from '@/utils/supabase/server';
+
+// In a server component or server action
+async function serverAction() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('table').select('*');
+  // Process data...
+}
+```
+
+## Best Practices
+
+### Error Handling
+Always check for and handle errors from Supabase operations:
+
+```typescript
+const { data, error } = await supabase.from('table').select('*');
+if (error) {
+  console.error('Error fetching data:', error);
+  // Handle error appropriately
+  return { error: error.message };
+}
+// Process data...
+```
+
+### Data Transformation
+Transform data from Supabase format to application types:
+
+```typescript
+// Define your application types
+type AppType = {
+  id: number;
+  name: string;
+  // Other fields...
+};
+
+// Transform from DB response to app type
+const transformedData: AppType[] = data.map(item => ({
+  id: item.id,
+  name: item.name,
+  // Map other fields...
+}));
+```
+
+### Function Organization
+Organize Supabase operations into dedicated service functions:
+
+```typescript
+// In a dedicated file (e.g., actions-projects.ts)
+export async function fetchProjects(params) {
+  const supabase = createClient();
+  // Supabase operations...
+  return { data, error };
+}
+```
+
+### RPC Functions
+Use RPC for complex database operations:
+
+```typescript
+const { data, error } = await supabase
+  .rpc('function_name', {
+    param1: value1,
+    param2: value2
+  });
+```
+
+### Pagination
+Implement pagination for large data sets:
+
+```typescript
+const { data, count } = await supabase
+  .from('table')
+  .select('*', { count: 'exact' })
+  .range(start, end);
+```
+
+### Security Considerations
+- Never expose sensitive operations to client-side code
+- Use Row Level Security (RLS) in Supabase
+- Validate all user inputs before using in queries 

@@ -1,0 +1,27 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Use Sonner for All Notifications
+
+Always use Sonner for all application notifications and alerts
+Do not use Toast or any other notification libraries in new code
+Migrate existing Toast implementations to Sonner when modifying related code
+
+Sonner Implementation Guidelines
+
+
+// Import Sonner
+import { toast } from 'sonner';
+
+// Basic success notification
+toast.success('Operation completed successfully');
+
+// Error notification
+toast.error('An error occurred while processing your request');
+
+// Info notification with custom duration
+toast.info('Your session will expire soon', {
+  duration: 5000
+});

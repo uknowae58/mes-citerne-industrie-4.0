@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Use the Skeleton component from ShadCN when loading states or placeholders are necessary.

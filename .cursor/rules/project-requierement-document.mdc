@@ -1,0 +1,92 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Project Requirements Document
+
+## 1. Project Overview
+
+This project is about developing an integrated management software for an automobile garage that specializes in professional services. The software centralizes all the activities related to garage management, including repair orders, invoicing, stock management, purchase tracking, and overall financial management. By streamlining these processes into one application, the garage can improve its operational efficiency, reduce manual errors, and optimize its workflow.
+
+The application is being built as a web app using Next.js and is specifically targeted at different types of users such as Administrators, Mechanics, Accountants, Purchasing Managers, and Warehouse Managers. The key objectives are to provide a user-friendly interface, ensure data transparency through downloadable DOCX documents (for invoices, repair orders, and cashier tickets), incorporate bilingual support (French and English), and include real-time analytics dashboards for performance monitoring. In essence, the system is designed to tackle the challenges of fragmented operations and manual record-keeping within automotive repair centers.
+
+## 2. In-Scope vs. Out-of-Scope
+
+**In-Scope (Version 1):**
+
+*   User authentication and role-based access control for five distinct roles: Administrateur, Mécanicien, Comptable, Responsable des Achats, and Magasinier.
+*   Module for Espace Réparation to record clients and vehicles, create detailed repair orders, and generate invoice proformas.
+*   Module for Espace Caisse to manage invoice processing, mark payment statuses, and produce cashier tickets.
+*   Module for Gestion de Stock to manage suppliers, articles, and parts along with automated low stock alerts.
+*   Module for Gestion des Achats to track product purchases and automatically update the stock system and supplier debts.
+*   Module for Finances Générales to manage and record general revenues and expenses integrated with real-time dashboards.
+*   Document generation in DOCX format for repair orders, invoices proforma, and cashier tickets.
+*   Bilingual interfaces in French and English.
+*   Integration of a support portal with FAQs and guidance for maintenance and support post-deployment.
+
+**Out-of-Scope:**
+
+*   Integration with external payment gateways, SMS notifications, or direct hardware support for printing beyond DOCX generation.
+*   Advanced data security or encryption measures (beyond basic requirements) as the emphasis is not on heavy security.
+*   Mobile app development or a hybrid application—this version will be strictly a web-based solution.
+*   Multiplatform desktop installation or offline capabilities.
+*   Customizable branding beyond the specified color scheme (#000000, #02ddbd).
+
+## 3. User Flow
+
+A new or returning user will first encounter a secure login screen where they enter their credentials. Based on the verified role (such as Administrateur, Mécanicien, Comptable, Responsable des Achats, or Magasinier), the application redirects them to their personalized dashboard. Here, users see a neatly organized interface with modules and navigation relevant to their specific responsibilities, such as repair orders for mechanics or financial dashboards for accountants.
+
+From the dashboard, users can smoothly navigate between the different functional modules. For example, a Mécanicien can start by entering client and vehicle information, then create and update detailed repair orders while generating invoice proformas. Similarly, an Accountants role in the Espace Caisse checks pending transactions, updates payment statuses, and downloads detailed cashier tickets. This structured but intuitive flow ensures that users always have access to the most important functions and can carry out their tasks with minimal clicks and disruption.
+
+## 4. Core Features
+
+*   **User Authentication & Role Management:**
+
+    *   Secure login for all users.
+    *   Role-based permissions (Administrateur, Mécanicien, Comptable, Responsable des Achats, Magasinier).
+    *   Administrators control user management and system configurations.
+
+*   **Espace Réparation:**
+
+    *   Registration and tracking of client and vehicle details in a centralized database.
+    *   Creation and management of detailed repair orders listing required services (Carrosserie, Électricité, etc.) and parts.
+    *   Automatic generation of invoice proformas downloadable in DOCX format.
+
+*   **Espace Caisse:**
+
+    *   Centralized receipt and management of invoice proformas.
+    *   Tracking and marking of payment statuses (paid or pending).
+    *   Generation of detailed cashier tickets for every transaction, available for download.
+
+*   **Gestion de Stock:**
+
+    *   Recording and management of supplier information including contact details and payment terms.
+    *   Maintaining inventory of articles and pièces détachées with the ability to add, modify, or remove records.
+    *   Monitoring stock levels with automated alerts for low stock thresholds.
+
+*   **Gestion des Achats:**
+
+    *   Detailed logging of purchased products including supplier details, purchase prices, and quantities.
+    *   Synchronized update to stock levels and tracking of supplier debts.
+    *   Historical data management for trend analysis and inventory management.
+
+*   **Finances Générales & Dashboard Analytics:**
+
+    *   Integration of revenues from Espace Caisse and logging all general expenses.
+    *   Real-time dashboards offering views into income, expenses, and overall financial performance.
+    *   Reporting capabilities for detailed analytical insights.
+
+*   **Document Generation:**
+
+    *   Automated creation of DOCX documents for repair orders, invoices proforma, and cashier tickets.
+    *   Consistent formatting aligned with the chosen color branding (#000000 and #1d01c4).
+
+*   **Bilingual Support:**
+
+    *   Interfaces available in both French and English.
+
+*   **Support & Maintenance Tools:**
+
+    *   A dedicated help portal offering FAQs, troubleshooting guides, and support contact options.
+    *   Regular automated backups and communication channels for software updates.

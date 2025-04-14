@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Always write code in English, but ensure that any user-facing content (UI text, messages, labels) is in French.

@@ -7,6 +7,7 @@ import {
   CreditCard,
   LogOut,
   Sparkles,
+  User,
 } from "lucide-react"
 import {
   Avatar,
@@ -33,20 +34,30 @@ import { useEffect, useState } from 'react'
 import { signOutAction } from "@/app/actions"
 import { Button } from "./ui/button"
 
+type UserData = {
+  username: string;
+  email: string;
+  firstname: string | null;
+  lastname: string | null;
+  photo_url: string | null;
+}
+
 export function NavUser() {
   const { isMobile } = useSidebar()
   const supabase = createClient()
 
-  const [userData, setUserData] = useState<{
-    name: string;
-    email: string;
-    avatar: string;
-  } | null>(null)
+  const [userData, setUserData] = useState<UserData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     async function fetchUserData() {
+      setIsLoading(true)
+      
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user?.id) return
+      if (!user?.id) {
+        setIsLoading(false)
+        return
+      }
 
       const { data, error } = await supabase
         .from('users')
@@ -55,14 +66,10 @@ export function NavUser() {
         .single()
 
       if (data && !error) {
-        setUserData({
-          name: data.firstname && data.lastname
-            ? `${data.firstname} ${data.lastname}`
-            : data.username,
-          email: data.email,
-          avatar: data.photo_url || ''
-        })
+        setUserData(data as UserData)
       }
+      
+      setIsLoading(false)
     }
 
     fetchUserData()
@@ -74,7 +81,27 @@ export function NavUser() {
     return () => subscription.unsubscribe()
   }, [])
 
+  if (isLoading) {
+    return <div className="flex items-center p-2">
+      <Avatar className="h-8 w-8 rounded-lg">
+        <AvatarFallback className="rounded-lg">
+          <User className="h-4 w-4" />
+        </AvatarFallback>
+      </Avatar>
+    </div>
+  }
+
   if (!userData) return null
+  
+  // Generate display name from available fields
+  const displayName = userData.firstname && userData.lastname 
+    ? `${userData.firstname} ${userData.lastname}`
+    : userData.username
+
+  // Generate initials for avatar fallback
+  const initials = userData.firstname && userData.lastname
+    ? `${userData.firstname[0]}${userData.lastname[0]}`
+    : userData.username.substring(0, 2)
 
   return (
     <SidebarMenu>
@@ -86,13 +113,13 @@ export function NavUser() {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={userData.avatar} alt={userData.name} />
+                <AvatarImage src={userData.photo_url || ''} alt={displayName} />
                 <AvatarFallback className="rounded-lg">
-                  {userData.name.substring(0, 2).toUpperCase()}
+                  {initials.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{userData.name}</span>
+                <span className="truncate font-semibold">{displayName}</span>
                 <span className="truncate text-xs">{userData.email}</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
@@ -107,13 +134,13 @@ export function NavUser() {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={userData.avatar} alt={userData.name} />
+                  <AvatarImage src={userData.photo_url || ''} alt={displayName} />
                   <AvatarFallback className="rounded-lg">
-                  {userData.name.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
+                    {initials.toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{userData.name}</span>
+                  <span className="truncate font-semibold">{displayName}</span>
                   <span className="truncate text-xs">{userData.email}</span>
                 </div>
               </div>
@@ -122,18 +149,16 @@ export function NavUser() {
             
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              
-
               <DropdownMenuItem>
-                <Bell />
+                <Bell className="mr-2 h-4 w-4" />
                 Notifications
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <form action={signOutAction}>
-                <Button type="submit" variant={"destructive"}>
-                  Me deconnecter
+              <form action={signOutAction} className="w-full">
+                <Button type="submit" variant="destructive" className="w-full">
+                  Me déconnecter
                 </Button>
               </form>
             </DropdownMenuItem>

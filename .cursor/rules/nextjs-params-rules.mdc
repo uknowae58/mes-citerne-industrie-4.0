@@ -1,0 +1,113 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: Rules for handling params in Next.js dynamic routes
+globs: ["app/**/*.tsx", "app/**/*.ts"]
+alwaysApply: true
+---
+
+# Next.js Params Handling Rules
+
+## Type Definitions for Dynamic Route Params
+
+### Rule 1: Always type params as Promise
+In Next.js, always type the params object as a Promise in page components and metadata functions:
+
+```typescript
+// CORRECT
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  // ...
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  // ...
+}
+
+// INCORRECT - Will cause type errors
+export default async function Page({ params }: { params: { id: string } }) {
+  // ...
+}
+```
+
+### Rule 2: Import and use the React 'use' hook
+Always use the React `use` hook to unwrap the params Promise:
+
+```typescript
+import { use } from "react";
+
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+  const id = resolvedParams.id; // Now safe to access
+  // ...
+}
+```
+
+### Rule 3: Follow consistent pattern across all dynamic routes
+Apply this pattern consistently across all dynamic route components:
+
+```typescript
+import { use } from "react";
+
+export default async function DynamicPage({ params }: { params: Promise<{ slug: string }> }) {
+  const resolvedParams = use(params);
+  const slug = resolvedParams.slug;
+  // Process with the unwrapped value
+}
+```
+
+## Common Issues and Solutions
+
+### Issue: Type error with PageProps constraint
+If you see errors like:
+```
+Type '...' does not satisfy the constraint 'PageProps'.
+Types of property 'params' are incompatible.
+Type '{ id: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+```
+
+The solution is to ensure params is typed as a Promise and accessed using the `use` hook.
+
+### Issue: Cannot read properties of undefined
+If you see errors about accessing properties of undefined params, ensure you're unwrapping the Promise correctly using the `use` hook before accessing properties.
+
+## Implementation Example
+
+```typescript
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { use } from "react";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const resolvedParams = use(params);
+  const id = parseInt(resolvedParams.id, 10);
+  // Rest of the function...
+}
+
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+  const id = parseInt(resolvedParams.id, 10);
+  // Rest of the component...
+}
+```
+
+## When Working with searchParams
+
+For searchParams, the pattern is slightly different as they are not promises:
+
+```typescript
+export default function Page({ 
+  params,
+  searchParams 
+}: { 
+  params: Promise<{ id: string }>;
+  searchParams: { [key: string]: string | string[] | undefined }
+}) {
+  const resolvedParams = use(params);
+  // Access searchParams directly - they are not a Promise
+  const query = searchParams.q;
+  // ...
+}
+``` 
