@@ -15,54 +15,90 @@ import {
   StopCircle,
   Database,
   AlertTriangle,
-  Waves
+  Waves,
+  Bug,
+  X
 } from 'lucide-react'
 import { fetchLatestOPCUAData, subscribeToOPCUAData, type OPCUAData } from '@/lib/actions/opcua-data'
+import { createClient } from '@/utils/supabase/client'
 import { toast } from 'sonner'
 
-export default function WaterTankDashboard() {
+interface WaterTankDashboardProps {
+  initialData: OPCUAData | null
+}
+
+export default function WaterTankDashboard({ initialData }: WaterTankDashboardProps) {
   // State for all the variables
-  const [tankLevel, setTankLevel] = useState(0)
-  const [flowRate, setFlowRate] = useState(0)
-  const [setPoint, setSetPoint] = useState(0)
-  const [isStarted, setIsStarted] = useState(false)
-  const [startLight, setStartLight] = useState(false)
-  const [stopLight, setStopLight] = useState(false)
-  const [resetLight, setResetLight] = useState(false)
+  const [tankLevel, setTankLevel] = useState(initialData?.values['level-meter'] ?? 0)
+  const [flowRate, setFlowRate] = useState(initialData?.values.flow_meter ?? 0)
+  const [setPoint, setSetPoint] = useState(initialData?.values.setpoint ?? 0)
+  const [isStarted, setIsStarted] = useState(initialData?.values.start ?? false)
+  const [startLight, setStartLight] = useState(initialData?.values.start_light ?? false)
+  const [stopLight, setStopLight] = useState(initialData?.values.stop_light ?? false)
+  const [resetLight, setResetLight] = useState((initialData?.values.reset_light ?? 0) > 0)
   const [dataValue, setDataValue] = useState('127.0.0.1')
+  const [lastUpdated, setLastUpdated] = useState<string | null>(initialData?.timestamp ?? null)
+  
+  // Debug states
+  const [showDebug, setShowDebug] = useState(false)
+  const [fetchError, setFetchError] = useState<string | null>(null)
+  const [dataSource, setDataSource] = useState<'server' | 'client' | 'none'>(
+    initialData ? 'server' : 'none'
+  )
+  const [responseDetails, setResponseDetails] = useState<any>(null)
 
   // Fetch initial data and set up real-time subscription
   useEffect(() => {
-    // Fetch initial data
+    if (!initialData) {
+      // If no initialData was provided from the server, fetch it client-side
+      setDataSource('none') // Reset while loading
+      
     fetchLatestOPCUAData()
       .then(data => {
         updateStateFromData(data)
+          setLastUpdated(data.timestamp)
+          setDataSource('client')
+          setFetchError(null)
+          setResponseDetails({ id: data.id, timestamp: data.timestamp })
+          console.log("Client-side data fetch successful:", data)
       })
       .catch(error => {
         console.error('Error fetching initial data:', error)
+          setFetchError(error.message || "Failed to fetch data from client")
         toast.error('Failed to fetch initial data')
       })
+    } else {
+      console.log("Using server-provided data:", initialData)
+      setResponseDetails({ id: initialData.id, timestamp: initialData.timestamp })
+    }
 
     // Set up real-time subscription
     const unsubscribe = subscribeToOPCUAData(data => {
       updateStateFromData(data)
+      setLastUpdated(data.timestamp)
+      toast.info('New data received', { duration: 2000 })
     })
 
     // Cleanup subscription on unmount
     return () => {
       unsubscribe()
     }
-  }, [])
+  }, [initialData])
 
   // Helper function to update state from OPCUA data
   const updateStateFromData = (data: OPCUAData) => {
-    setTankLevel(data.values['level-meter'])
-    setFlowRate(data.values.flow_meter)
-    setSetPoint(data.values.setpoint)
-    setIsStarted(data.values.start)
-    setStartLight(data.values.start_light)
-    setStopLight(data.values.stop_light)
-    setResetLight(data.values.reset_light > 0)
+    if (!data || !data.values) {
+      console.error("Invalid data received:", data)
+      return
+    }
+    
+    setTankLevel(data.values['level-meter'] ?? 0)
+    setFlowRate(data.values.flow_meter ?? 0)
+    setSetPoint(data.values.setpoint ?? 0)
+    setIsStarted(data.values.start ?? false)
+    setStartLight(data.values.start_light ?? false)
+    setStopLight(data.values.stop_light ?? false)
+    setResetLight((data.values.reset_light ?? 0) > 0)
   }
 
   // Calculate status based on tank level
@@ -74,86 +110,127 @@ export default function WaterTankDashboard() {
 
   const tankStatus = getTankStatus()
 
+  // Manual refresh function
+  const handleManualRefresh = async () => {
+    try {
+      const data = await fetchLatestOPCUAData()
+      updateStateFromData(data)
+      setLastUpdated(data.timestamp)
+      setDataSource('client')
+      setFetchError(null)
+      toast.success('Data refreshed successfully')
+    } catch (error: any) {
+      console.error('Error refreshing data:', error)
+      setFetchError(error.message || "Failed to refresh data")
+      toast.error('Failed to refresh data')
+    }
+  }
+
+  // Test direct Supabase connection
+  const testDirectSupabase = async () => {
+    try {
+      setFetchError(null)
+      toast.info('Testing direct Supabase connection...')
+      
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('opcua_data')
+        .select('*')
+        .limit(5)
+      
+      if (error) {
+        setFetchError(`Direct Supabase error: ${error.message}`)
+        toast.error('Direct Supabase connection failed')
+        console.error('Direct Supabase error:', error)
+        return
+      }
+      
+      setResponseDetails({
+        directTest: true,
+        numRows: data?.length || 0,
+        firstRow: data && data.length > 0 ? data[0].id : null,
+        message: 'Direct Supabase query successful'
+      })
+      
+      toast.success(`Found ${data?.length || 0} rows in opcua_data table`)
+      console.log('Direct Supabase data:', data)
+    } catch (error: any) {
+      setFetchError(`Direct test error: ${error.message}`)
+      toast.error('Direct test failed')
+      console.error('Direct test error:', error)
+    }
+  }
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-      <style jsx global>{`
-        @keyframes wave1 {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-100%); }
-        }
-        
-        @keyframes wave2 {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-80%); }
-        }
-        
-        @keyframes wave3 {
-          0% { transform: translateX(-30%); }
-          100% { transform: translateX(0%); }
-        }
-        
-        .bubble-small {
-          position: absolute;
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.5), transparent);
-          box-shadow: 0 0 2px rgba(255, 255, 255, 0.3);
-        }
-        
-        .bubble-medium {
-          position: absolute;
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-          background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.5), transparent);
-          box-shadow: 0 0 3px rgba(255, 255, 255, 0.3);
-        }
-        
-        .bubble-large {
-          position: absolute;
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.5), transparent);
-          box-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
-        }
-        
-        @keyframes bubble1 {
-          0% { bottom: 0; left: 10%; opacity: 0; }
-          20% { opacity: 0.6; }
-          80% { opacity: 0.6; }
-          100% { bottom: 100%; left: 15%; opacity: 0; }
-        }
-        
-        @keyframes bubble2 {
-          0% { bottom: 0; left: 30%; opacity: 0; }
-          20% { opacity: 0.5; }
-          80% { opacity: 0.5; }
-          100% { bottom: 100%; left: 25%; opacity: 0; }
-        }
-        
-        @keyframes bubble3 {
-          0% { bottom: 0; left: 50%; opacity: 0; }
-          20% { opacity: 0.7; }
-          80% { opacity: 0.7; }
-          100% { bottom: 100%; left: 55%; opacity: 0; }
-        }
-        
-        @keyframes bubble4 {
-          0% { bottom: 0; left: 70%; opacity: 0; }
-          20% { opacity: 0.4; }
-          80% { opacity: 0.4; }
-          100% { bottom: 100%; left: 65%; opacity: 0; }
-        }
-        
-        @keyframes bubble5 {
-          0% { bottom: 0; left: 90%; opacity: 0; }
-          20% { opacity: 0.6; }
-          80% { opacity: 0.6; }
-          100% { bottom: 100%; left: 85%; opacity: 0; }
-        }
-      `}</style>
+    <>
+      {/* Debug panel */}
+      {showDebug && (
+        <Card className="mb-6 border-yellow-500 bg-yellow-500/10">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Bug className="h-5 w-5 text-yellow-500" />
+                <span>Debug Information</span>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setShowDebug(false)}
+                className="h-8 w-8"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-sm">
+              <div>
+                <span className="font-semibold">Data Source:</span> {dataSource}
+              </div>
+              <div>
+                <span className="font-semibold">Initial Data:</span> {initialData ? 'Provided' : 'Not provided'} 
+              </div>
+              <div>
+                <span className="font-semibold">Last Updated:</span> {lastUpdated ? new Date(lastUpdated).toLocaleString() : 'Never'} 
+              </div>
+              {responseDetails && (
+                <div>
+                  <span className="font-semibold">Response ID:</span> {responseDetails.id || 'N/A'}
+                </div>
+              )}
+              {fetchError && (
+                <div className="text-destructive">
+                  <span className="font-semibold">Fetch Error:</span> {fetchError}
+                </div>
+              )}
+              <div className="mt-2 flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleManualRefresh}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh Data
+                </Button>
+                <Button variant="outline" size="sm" onClick={testDirectSupabase}>
+                  <Database className="h-4 w-4 mr-2" />
+                  Test Direct DB
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        {/* Show debug toggle button */}
+        <div className="md:col-span-12 flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDebug(!showDebug)}
+            className="flex items-center gap-1"
+          >
+            <Bug className="h-4 w-4" />
+            {showDebug ? 'Hide Debug Info' : 'Show Debug Info'}
+          </Button>
+        </div>
 
       {/* Main Tank Level Card */}
       <Card className="md:col-span-7 shadow-md border border-border overflow-hidden">
@@ -168,6 +245,11 @@ export default function WaterTankDashboard() {
                 {tankStatus.icon}
                 {tankStatus.status}
               </span>
+                {lastUpdated && (
+                  <span className="text-xs text-muted-foreground">
+                    Mis à jour: {new Date(lastUpdated).toLocaleString('fr-FR')}
+                  </span>
+                )}
             </div>
           </CardTitle>
         </CardHeader>
@@ -396,64 +478,11 @@ export default function WaterTankDashboard() {
                   <span className="text-xs mt-1 font-medium">Reset</span>
                 </div>
               </div>
-              
-              {/* Control Buttons */}
-              <div className="grid grid-cols-3 gap-3 mt-2">
-                <Button 
-                  variant={isStarted ? "outline" : "default"} 
-                  className={`flex items-center justify-center gap-1 ${isStarted ? 'border-primary text-primary' : 'bg-primary hover:bg-primary/90'}`}
-                  onClick={() => setIsStarted(true)}
-                >
-                  <PlayCircle className="h-4 w-4" />
-                  <span>Start</span>
-                </Button>
-                
-                <Button 
-                  variant={!isStarted ? "outline" : "default"} 
-                  className={`flex items-center justify-center gap-1 ${!isStarted ? 'border-destructive text-destructive' : 'bg-destructive hover:bg-destructive/90'}`}
-                  onClick={() => setIsStarted(false)}
-                >
-                  <StopCircle className="h-4 w-4" />
-                  <span>Stop</span>
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="flex items-center justify-center gap-1 border-border hover:bg-accent"
-                  onClick={() => {
-                    setTankLevel(0)
-                    setFlowRate(0)
-                    setResetLight(true)
-                    setTimeout(() => setResetLight(false), 1000)
-                  }}
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  <span>Reset</span>
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Factory I/O Card */}
-        <Card className="shadow-md border border-border">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2">
-              <Power className="h-5 w-5 text-primary" />
-              <span>FACTORY I/O</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border">
-              <span className="text-sm font-medium">Connection Status</span>
-              <div className="flex items-center gap-2">
-                <div className={`h-3 w-3 rounded-full ${isStarted ? 'bg-primary' : 'bg-destructive'} ${isStarted ? 'animate-pulse' : ''}`} />
-                <span className="text-sm font-medium">{isStarted ? 'Connected' : 'Disconnected'}</span>
-              </div>
             </div>
           </CardContent>
         </Card>
       </div>
     </div>
+    </>
   )
 } 

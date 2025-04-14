@@ -12,7 +12,8 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Water Tank MES Dashboard</h1>
       </div>
-      <WaterTankDashboard />
+      
+      <WaterTankDashboard initialData={null} />
     </div>
   )
 } 
