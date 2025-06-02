@@ -29,13 +29,13 @@ interface WaterTankDashboardProps {
 
 export default function WaterTankDashboard({ initialData }: WaterTankDashboardProps) {
   // State for all the variables
-  const [tankLevel, setTankLevel] = useState(initialData?.values['level-meter'] ?? 0)
+  const [tankLevel, setTankLevel] = useState(initialData?.values.level_meter ?? 0)
   const [flowRate, setFlowRate] = useState(initialData?.values.flow_meter ?? 0)
   const [setPoint, setSetPoint] = useState(initialData?.values.setpoint ?? 0)
   const [isStarted, setIsStarted] = useState(initialData?.values.start ?? false)
   const [startLight, setStartLight] = useState(initialData?.values.start_light ?? false)
   const [stopLight, setStopLight] = useState(initialData?.values.stop_light ?? false)
-  const [resetLight, setResetLight] = useState((initialData?.values.reset_light ?? 0) > 0)
+  const [resetLight, setResetLight] = useState(Number(initialData?.values.reset_light ?? 0) > 0)
   const [dataValue, setDataValue] = useState('127.0.0.1')
   const [lastUpdated, setLastUpdated] = useState<string | null>(initialData?.timestamp ?? null)
   
@@ -92,13 +92,13 @@ export default function WaterTankDashboard({ initialData }: WaterTankDashboardPr
       return
     }
     
-    setTankLevel(data.values['level-meter'] ?? 0)
+    setTankLevel(data.values.level_meter ?? 0)
     setFlowRate(data.values.flow_meter ?? 0)
     setSetPoint(data.values.setpoint ?? 0)
     setIsStarted(data.values.start ?? false)
     setStartLight(data.values.start_light ?? false)
     setStopLight(data.values.stop_light ?? false)
-    setResetLight((data.values.reset_light ?? 0) > 0)
+    setResetLight(Number(data.values.reset_light ?? 0) > 0)
   }
 
   // Calculate status based on tank level

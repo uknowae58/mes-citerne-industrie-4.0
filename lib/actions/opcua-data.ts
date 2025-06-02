@@ -6,11 +6,11 @@ export type OPCUAData = {
   values: {
     start: boolean;
     setpoint: number;
-    'FACTORYI/O': boolean;
+    factory_io: string;
     flow_meter: number;
     stop_light: boolean;
-    'level-meter': number;
-    reset_light: number;
+    level_meter: number;
+    reset_light: boolean;
     start_light: boolean;
   };
 };
