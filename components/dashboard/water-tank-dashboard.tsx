@@ -27,11 +27,49 @@ interface WaterTankDashboardProps {
   initialData: OPCUAData | null
 }
 
+// Helper function to convert DWORD hexadecimal to decimal
+const convertDWordHexToDecimal = (hexValue: any): number => {
+  if (typeof hexValue === 'number') {
+    return hexValue; // Already a number
+  }
+  
+  if (typeof hexValue === 'string') {
+    // Remove '0x' prefix if present
+    const cleanHex = hexValue.replace(/^0x/i, '');
+    
+    // Parse as hexadecimal and convert to signed 32-bit integer
+    const parsed = parseInt(cleanHex, 16);
+    
+    // Handle DWORD (32-bit unsigned) overflow for signed interpretation
+    if (parsed > 0x7FFFFFFF) {
+      return parsed - 0x100000000;
+    }
+    
+    return parsed;
+  }
+  
+  return 0; // Default fallback
+}
+
+// Helper function to convert hex values to appropriate display values
+const convertHexValue = (hexValue: any, maxValue: number = 10): number => {
+  const decimal = convertDWordHexToDecimal(hexValue);
+  // Convert to percentage based on max value (10 -> 100%)
+  const percentage = Math.max(0, Math.min(100, (decimal / maxValue) * 100));
+  return percentage;
+}
+
 export default function WaterTankDashboard({ initialData }: WaterTankDashboardProps) {
   // State for all the variables
-  const [tankLevel, setTankLevel] = useState(initialData?.values.level_meter ?? 0)
-  const [flowRate, setFlowRate] = useState(initialData?.values.flow_meter ?? 0)
-  const [setPoint, setSetPoint] = useState(initialData?.values.setpoint ?? 0)
+  const [tankLevel, setTankLevel] = useState(
+    initialData ? convertHexValue(initialData.values.level_meter, 10) : 0
+  )
+  const [flowRate, setFlowRate] = useState(
+    initialData ? convertHexValue(initialData.values.flow_meter, 10) : 0
+  )
+  const [setPoint, setSetPoint] = useState(
+    initialData ? convertHexValue(initialData.values.setpoint, 10) : 0
+  )
   const [isStarted, setIsStarted] = useState(initialData?.values.start ?? false)
   const [startLight, setStartLight] = useState(initialData?.values.start_light ?? false)
   const [stopLight, setStopLight] = useState(initialData?.values.stop_light ?? false)
@@ -92,13 +130,21 @@ export default function WaterTankDashboard({ initialData }: WaterTankDashboardPr
       return
     }
     
-    setTankLevel(data.values.level_meter ?? 0)
-    setFlowRate(data.values.flow_meter ?? 0)
-    setSetPoint(data.values.setpoint ?? 0)
+    // Convert hex values to proper decimal values
+    setTankLevel(convertHexValue(data.values.level_meter, 10))
+    setFlowRate(convertHexValue(data.values.flow_meter, 10))
+    setSetPoint(convertHexValue(data.values.setpoint, 10))
     setIsStarted(data.values.start ?? false)
     setStartLight(data.values.start_light ?? false)
     setStopLight(data.values.stop_light ?? false)
     setResetLight(Number(data.values.reset_light ?? 0) > 0)
+    
+    // Log conversion details for debugging
+    console.log("Hex conversion details:", {
+      level_meter: { hex: data.values.level_meter, decimal: convertHexValue(data.values.level_meter, 10) },
+      flow_meter: { hex: data.values.flow_meter, decimal: convertHexValue(data.values.flow_meter, 10) },
+      setpoint: { hex: data.values.setpoint, decimal: convertHexValue(data.values.setpoint, 10) }
+    })
   }
 
   // Calculate status based on tank level
